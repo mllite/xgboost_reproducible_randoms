@@ -42,6 +42,8 @@ inline void UpdateLeafValues(std::vector<float>* p_quantiles, std::vector<bst_no
   auto& quantiles = *p_quantiles;
   auto const& h_node_idx = nidx;
 
+  std::cout << "UPDATE_LEAF_VALUES_START\n";
+
   size_t n_leaf = collective::GlobalMax(info, h_node_idx.size());
   CHECK(quantiles.empty() || quantiles.size() == n_leaf);
   if (quantiles.empty()) {
@@ -71,8 +73,13 @@ inline void UpdateLeafValues(std::vector<float>* p_quantiles, std::vector<bst_no
     auto nidx = h_node_idx[i];
     auto q = quantiles[i];
     CHECK(tree[nidx].IsLeaf());
+    std::cout << "UPDATE_LEAF_VALUES_SET_LEAF i=" << i << " nidx=" << nidx << " q="
+	      << q << " lr=" << learning_rate
+	      << " old_leaf_value=" << tree[nidx].LeafValue() << " new_leaf_value=" << q * learning_rate
+	      << "\n";
     tree[nidx].SetLeaf(q * learning_rate);
   }
+  std::cout << "UPDATE_LEAF_VALUES_START\n";
 }
 
 inline std::size_t IdxY(MetaInfo const& info, bst_group_t group_idx) {

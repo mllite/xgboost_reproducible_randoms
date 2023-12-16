@@ -86,6 +86,9 @@ bst_float PredValueByOneTree(const RegTree::FVec &p_feats, RegTree const &tree,
   const bst_node_t leaf = p_feats.HasMissing()
                               ? GetLeafIndex<true, has_categorical>(tree, p_feats, cats)
                               : GetLeafIndex<false, has_categorical>(tree, p_feats, cats);
+  
+  // std::printf("PRED_VALUE_BY_ONE_TREE leaf=%ld value=%d\n" , leaf, tree[leaf].LeafValue());
+  
   return tree[leaf].LeafValue();
 }
 }  // namespace scalar
@@ -559,6 +562,9 @@ class ColumnSplitHelper {
     auto const n_blocks = common::DivRoundUp(nsize, block_of_rows_size);
     InitBitVectors(nsize);
 
+    std::printf("PREDICT_BATCH_KERNEL batch_size=%ld num_feature=%ld n_blocks=%ld\n" ,
+		nsize, num_feature, n_blocks);
+
     // auto block_id has the same type as `n_blocks`.
     common::ParallelFor(n_blocks, n_threads_, [&](auto block_id) {
       auto const batch_offset = block_id * block_of_rows_size;
@@ -644,6 +650,7 @@ class CPUPredictor : public Predictor {
  protected:
   void PredictDMatrix(DMatrix *p_fmat, std::vector<bst_float> *out_preds,
                       gbm::GBTreeModel const &model, int32_t tree_begin, int32_t tree_end) const {
+    std::printf("CPUPredictor::PredictDMatrix_START\n");
     if (p_fmat->Info().IsColumnSplit()) {
       CHECK(!model.learner_model_param->IsVectorLeaf())
           << "Predict DMatrix with column split" << MTNotImplemented();
@@ -696,6 +703,7 @@ class CPUPredictor : public Predictor {
         }
       }
     }
+    std::printf("CPUPredictor::PredictDMatrix_END\n");
   }
 
  public:

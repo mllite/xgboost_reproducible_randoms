@@ -34,6 +34,8 @@ HistogramCuts SketchOnDMatrix(Context const *ctx, DMatrix *m, bst_bin_t max_bins
   HistogramCuts out;
   auto const &info = m->Info();
   auto n_threads = ctx->Threads();
+  std::printf("SKETCH_ON_DMATRIX_START num_col=%ld n_threads=%ld max_bins=%ld use_sorted=%d\n",
+	      info.num_col_, n_threads, max_bins, use_sorted);
   std::vector<bst_row_t> reduced(info.num_col_, 0);
   for (auto const &page : m->GetBatches<SparsePage>()) {
     auto const &entries_per_column =
@@ -64,6 +66,7 @@ HistogramCuts SketchOnDMatrix(Context const *ctx, DMatrix *m, bst_bin_t max_bins
     container.MakeCuts(ctx, m->Info(), &out);
   }
 
+  std::printf("SKETCH_ON_DMATRIX_END num_col=%ld n_threads=%ld max_bins=%ld use_sorted=%d\n", info.num_col_, n_threads, max_bins, use_sorted);
   return out;
 }
 

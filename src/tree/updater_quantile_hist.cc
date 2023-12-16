@@ -45,6 +45,16 @@
 #include "xgboost/tree_model.h"              // for RegTree, MTNotImplemented, RTreeNodeStat
 #include "xgboost/tree_updater.h"            // for TreeUpdater, TreeUpdaterReg, XGBOOST_REGISTE...
 
+
+void updater_monitor__Start(std::string const & iPart) {
+  std::printf("XGBOOST_UPDATER_OPERATION_START '%s'\n", iPart.c_str());
+}
+
+void updater_monitor__Stop(std::string const & iPart) {
+  std::printf("XGBOOST_UPDATER_OPERATION_END '%s'\n", iPart.c_str());
+}
+
+
 namespace xgboost::tree {
 
 DMLC_REGISTRY_FILE_TAG(updater_quantile_hist);
@@ -55,7 +65,7 @@ template <typename ExpandEntry, typename Updater>
 void UpdateTree(common::Monitor *monitor_, linalg::MatrixView<GradientPair const> gpair,
                 Updater *updater, DMatrix *p_fmat, TrainParam const *param,
                 HostDeviceVector<bst_node_t> *p_out_position, RegTree *p_tree) {
-  monitor_->Start(__func__);
+  updater_monitor__Start(__func__);
   updater->InitData(p_fmat, p_tree);
 
   Driver<ExpandEntry> driver{*param};
@@ -107,7 +117,7 @@ void UpdateTree(common::Monitor *monitor_, linalg::MatrixView<GradientPair const
 
   auto &h_out_position = p_out_position->HostVector();
   updater->LeafPartition(tree, gpair, &h_out_position);
-  monitor_->Stop(__func__);
+  updater_monitor__Stop(__func__);
 }
 
 /**
@@ -135,13 +145,14 @@ class MultiTargetHistBuilder {
  public:
   void UpdatePosition(DMatrix *p_fmat, RegTree const *p_tree,
                       std::vector<MultiExpandEntry> const &applied) {
-    monitor_->Start(__func__);
+    updater_monitor__Start(__func__);
     std::size_t page_id{0};
     for (auto const &page : p_fmat->GetBatches<GHistIndexMatrix>(ctx_, HistBatch(this->param_))) {
+      // page.cut.dump();
       this->partitioner_.at(page_id).UpdatePosition(this->ctx_, page, applied, p_tree);
       page_id++;
     }
-    monitor_->Stop(__func__);
+    updater_monitor__Stop(__func__);
   }
 
   void ApplyTreeSplit(MultiExpandEntry const &candidate, RegTree *p_tree) {
@@ -149,7 +160,7 @@ class MultiTargetHistBuilder {
   }
 
   void InitData(DMatrix *p_fmat, RegTree const *p_tree) {
-    monitor_->Start(__func__);
+    updater_monitor__Start(__func__);
 
     p_last_fmat_ = p_fmat;
     bst_bin_t n_total_bins = 0;
@@ -157,6 +168,7 @@ class MultiTargetHistBuilder {
     for (auto const &page : p_fmat->GetBatches<GHistIndexMatrix>(ctx_, HistBatch(param_))) {
       if (n_total_bins == 0) {
         n_total_bins = page.cut.TotalBins();
+	// page.cut.dump();
       } else {
         CHECK_EQ(n_total_bins, page.cut.TotalBins());
       }
@@ -171,12 +183,12 @@ class MultiTargetHistBuilder {
 
     evaluator_ = std::make_unique<HistMultiEvaluator>(ctx_, p_fmat->Info(), param_, col_sampler_);
     p_last_tree_ = p_tree;
-    monitor_->Stop(__func__);
+    updater_monitor__Stop(__func__);
   }
 
   MultiExpandEntry InitRoot(DMatrix *p_fmat, linalg::MatrixView<GradientPair const> gpair,
                             RegTree *p_tree) {
-    monitor_->Start(__func__);
+    updater_monitor__Start(__func__);
     MultiExpandEntry best;
     best.nid = RegTree::kRoot;
     best.depth = 0;
@@ -216,10 +228,11 @@ class MultiTargetHistBuilder {
       hists.push_back(&(*histogram_builder_).Histogram(t));
     }
     for (auto const &gmat : p_fmat->GetBatches<GHistIndexMatrix>(ctx_, HistBatch(param_))) {
+      // gmat.cut.dump();
       evaluator_->EvaluateSplits(*p_tree, hists, gmat.cut, &nodes);
       break;
     }
-    monitor_->Stop(__func__);
+    updater_monitor__Stop(__func__);
 
     return nodes.front();
   }
@@ -281,10 +294,10 @@ class MultiTargetHistBuilder {
     if (!p_last_fmat_ || !p_last_tree_ || data != p_last_fmat_) {
       return false;
     }
-    monitor_->Start(__func__);
+    updater_monitor__Start(__func__);
     CHECK_EQ(out_preds.Size(), data->Info().num_row_ * p_last_tree_->NumTargets());
     UpdatePredictionCacheImpl(ctx_, p_last_tree_, partitioner_, out_preds);
-    monitor_->Stop(__func__);
+    updater_monitor__Stop(__func__);
     return true;
   }
 };
@@ -324,6 +337,12 @@ class HistUpdater {
         task_{task},
         ctx_{ctx} {
     monitor_->Init(__func__);
+    updater_monitor__Start(__func__);
+  }
+
+  ~HistUpdater () {
+
+    updater_monitor__Stop(__func__);
   }
 
   bool UpdatePredictionCache(DMatrix const *data, linalg::MatrixView<float> out_preds) const {
@@ -332,25 +351,30 @@ class HistUpdater {
     if (!p_last_fmat_ || !p_last_tree_ || data != p_last_fmat_) {
       return false;
     }
-    monitor_->Start(__func__);
+    updater_monitor__Start(__func__);
     CHECK_EQ(out_preds.Size(), data->Info().num_row_);
     UpdatePredictionCacheImpl(ctx_, p_last_tree_, partitioner_, out_preds);
-    monitor_->Stop(__func__);
+    updater_monitor__Stop(__func__);
     return true;
   }
 
  public:
   // initialize temp data structure
   void InitData(DMatrix *fmat, RegTree const *p_tree) {
-    monitor_->Start(__func__);
+    updater_monitor__Start(__func__);
     bst_bin_t n_total_bins{0};
     partitioner_.clear();
     for (auto const &page : fmat->GetBatches<GHistIndexMatrix>(ctx_, HistBatch(param_))) {
       if (n_total_bins == 0) {
+	// page.cut.dump();
         n_total_bins = page.cut.TotalBins();
       } else {
         CHECK_EQ(n_total_bins, page.cut.TotalBins());
       }
+      
+      std::printf("HIST_UPDATER_SINGLE_TGT_INITDATA n_total_bins=%ld page_size=%ld page_base_row_id=%ld column_split=%d\n",
+		  n_total_bins, page.Size(), page.base_rowid, fmat->Info().IsColumnSplit());
+      
       partitioner_.emplace_back(this->ctx_, page.Size(), page.base_rowid,
                                 fmat->Info().IsColumnSplit());
     }
@@ -358,19 +382,20 @@ class HistUpdater {
                               fmat->Info().IsColumnSplit(), hist_param_);
     evaluator_ = std::make_unique<HistEvaluator>(ctx_, this->param_, fmat->Info(), col_sampler_);
     p_last_tree_ = p_tree;
-    monitor_->Stop(__func__);
+    updater_monitor__Stop(__func__);
   }
 
   void EvaluateSplits(DMatrix *p_fmat, RegTree const *p_tree,
                       std::vector<CPUExpandEntry> *best_splits) {
-    monitor_->Start(__func__);
+    updater_monitor__Start(__func__);
     auto const &histograms = histogram_builder_->Histogram(0);
     auto ft = p_fmat->Info().feature_types.ConstHostSpan();
     for (auto const &gmat : p_fmat->GetBatches<GHistIndexMatrix>(ctx_, HistBatch(param_))) {
+      // gmat.cut.dump();
       evaluator_->EvaluateSplits(histograms, gmat.cut, ft, *p_tree, best_splits);
       break;
     }
-    monitor_->Stop(__func__);
+    updater_monitor__Stop(__func__);
   }
 
   void ApplyTreeSplit(CPUExpandEntry const &candidate, RegTree *p_tree) {
@@ -379,7 +404,7 @@ class HistUpdater {
 
   CPUExpandEntry InitRoot(DMatrix *p_fmat, linalg::MatrixView<GradientPair const> gpair,
                           RegTree *p_tree) {
-    monitor_->Start(__func__);
+    updater_monitor__Start(__func__);
     CPUExpandEntry node(RegTree::kRoot, p_tree->GetDepth(0));
 
     this->histogram_builder_->BuildRootHist(p_fmat, p_tree, partitioner_, gpair, node,
@@ -393,6 +418,7 @@ class HistUpdater {
          * of gradient histogram is equal to snode[nid]
          */
         auto const &gmat = *(p_fmat->GetBatches<GHistIndexMatrix>(ctx_, HistBatch(param_)).begin());
+	gmat.cut.dump("InitRoot");
         std::vector<std::uint32_t> const &row_ptr = gmat.cut.Ptrs();
         CHECK_GE(row_ptr.size(), 2);
         std::uint32_t const ibegin = row_ptr[0];

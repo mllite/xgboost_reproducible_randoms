@@ -410,13 +410,13 @@ struct SplitEntryContainer {
   SplitEntryContainer() = default;
 
   friend std::ostream &operator<<(std::ostream &os, SplitEntryContainer const &s) {
-    os << "loss_chg: " << s.loss_chg << "\n"
-       << "dft_left: " << s.DefaultLeft() << "\n"
-       << "split_index: " << s.SplitIndex() << "\n"
-       << "split_value: " << s.split_value << "\n"
-       << "is_cat: " << s.is_cat << "\n"
-       << "left_sum: " << s.left_sum << "\n"
-       << "right_sum: " << s.right_sum << std::endl;
+    os << "{ loss_chg: " << s.loss_chg << ", "
+       << "dft_left: " << s.DefaultLeft() << ", "
+       << "split_index: " << s.SplitIndex() << ", "
+       << "split_value: " << s.split_value << ", "
+       << "is_cat: " << s.is_cat << ", "
+       << "left_sum: " << s.left_sum << ", "
+       << "right_sum: " << s.right_sum << " }";
     return os;
   }
 

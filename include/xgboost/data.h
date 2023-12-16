@@ -497,6 +497,19 @@ class BatchSet {
   BatchIterator<T> begin() { return begin_iter_; }  // NOLINT
   BatchIterator<T> end() { return BatchIterator<T>(nullptr); }  // NOLINT
 
+  void dump(std::string const & iLabel) const {
+    auto const & lEnd = BatchIterator<T>(nullptr);
+    std::printf("XGBOOST_DUMP_BATCHSET_START '%s'\n", iLabel.c_str());
+    // for (auto & iter = begin_iter_; iter != lEnd; ++iter) {
+    //   auto const & batch = *iter;
+    //   auto page = batch.GetView();
+    //   auto first_row = page[0];
+    //   std::printf("XGBOOST_DUMP_BATCHSET_DETAIL '%ld' '%ld' '%d'\n",
+    // 		  first_row.size(), first_row[2].index, first_row[2].fvalue);
+    // }
+    std::printf("XGBOOST_DUMP_BATCHSET_END '%s'\n", iLabel.c_str());
+  }
+  
  private:
   BatchIterator<T> begin_iter_;
 };
@@ -659,7 +672,9 @@ class DMatrix {
 
 template <>
 inline BatchSet<SparsePage> DMatrix::GetBatches() {
-  return GetRowBatches();
+  auto const & lBatches = GetRowBatches();
+  lBatches.dump("GET_BATCHES_SPARSE_PAGE");
+  return lBatches;
 }
 
 template <>

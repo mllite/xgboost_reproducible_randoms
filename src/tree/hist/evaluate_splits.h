@@ -226,6 +226,12 @@ class HistEvaluator {
     const std::vector<bst_float> &cut_val = cut.Values();
     auto const &parent = snode_[nidx];
 
+    // std::cout << "EnumerateSplit_DETAIL " << " nidx=" << nidx << " fidx=" <<  fidx << " [ ";
+    // for (bst_bin_t i = cut_ptr[fidx]; i != cut_ptr.at(fidx + 1); i += 1) {
+    //   std::cout << "(cutpoint=" << cut_val[i] << ", grad=" << hist[i].GetGrad() << ", hess=" <<  hist[i].GetHess() << "), ";
+    // }
+    // std::cout << " ]\n" << std::flush;
+
     // statistics on both sides of split
     GradStats left_sum;
     GradStats right_sum;
@@ -254,6 +260,11 @@ class HistEvaluator {
       // try to find a split
       left_sum.Add(hist[i].GetGrad(), hist[i].GetHess());
       right_sum.SetSubstract(parent.stats, left_sum);
+      std::cout << "EnumerateSplit_1 " << i << " nidx=" << nidx << " fidx=" <<  fidx << " grad_i="
+		<< hist[i].GetGrad() << " hess_i=" << hist[i].GetHess()
+		<< " split_pt=" << cut_val[i]
+		<< " parent.root_gain=" << parent.root_gain 
+		<< "\n" << std::flush;
       if (IsValid(left_sum, right_sum)) {
         bst_float loss_chg;
         bst_float split_pt;
@@ -278,6 +289,10 @@ class HistEvaluator {
           }
           best.Update(loss_chg, fidx, split_pt, d_step == -1, false, right_sum, left_sum);
         }
+	std::cout << "EnumerateSplit_2 " << i << " nidx=" << nidx << " fidx=" <<  fidx
+		  << " split_pt=" << split_pt
+		  << " parent.root_gain=" << parent.root_gain << " loss_chg=" << loss_chg
+		  << "\n" << std::flush;
       }
     }
 
@@ -404,10 +419,17 @@ class HistEvaluator {
         }
       }
     }
+
+    auto & lVec = *p_entries;
+    for(size_t i=0; i < lVec.size(); ++i) {
+      lVec[i].dump();
+    }
+
   }
 
   // Add splits to tree, handles all statistic
   void ApplyTreeSplit(CPUExpandEntry const& candidate, RegTree *p_tree) {
+    std::cout << "APPLY_TREE_SPLIT_CANDIDATE " << candidate.nid << " " << param_->learning_rate << "\n" << std::flush;
     auto evaluator = tree_evaluator_.GetEvaluator();
     RegTree &tree = *p_tree;
 
@@ -757,7 +779,8 @@ class HistMultiEvaluator {
                           param_->colsample_bytree);
   }
 };
-
+  
+  
 /**
  * \brief CPU implementation of update prediction cache, which calculates the leaf value
  *        for the last tree and accumulates it to prediction vector.
@@ -780,7 +803,10 @@ void UpdatePredictionCacheImpl(Context const *ctx, RegTree const *p_last_tree,
         auto const &rowset = part[nidx];
         auto leaf_value = tree[nidx].LeafValue();
         for (const size_t *it = rowset.begin + r.begin(); it < rowset.begin + r.end(); ++it) {
+	  auto lBefore = out_preds(*it); 
           out_preds(*it) += leaf_value;
+	  std::cout << "UpdatePredictionCacheImpl " << *it << " " << nidx << " "
+		    << leaf_value << " " << out_preds(*it) << "\n" << std::flush;
         }
       }
     });

@@ -41,6 +41,20 @@ struct PredictionCacheEntry {
    */
   void Update(std::uint32_t v) { version += v; }
   void Reset() { version = 0; }
+
+  void dump(std::string const & iLabel, size_t NR) const {
+    auto& h_predts = predictions.HostVector();
+    size_t NC = h_predts.size() / NR;
+    std::cout << "PREDICTION_CACHE_ENTRY_DUMP_START '" << iLabel << "' version=" << version
+	      << " N=" << h_predts.size() << " NR=" << NR << " NC=" << NC
+	      << "\n";
+    for(size_t i=0; i < std::min(size_t(12), NR); ++i) {
+      std::cout << "PREDICTION_CACHE_ENTRY " << i << " [ ";
+      for(size_t j=0 ; j < NC; ++j) std::cout << h_predts[i*NC + j] << " ";
+      std::cout << "]\n";
+    }
+    std::cout << "PREDICTION_CACHE_ENTRY_DUMP_END '" << iLabel << "'\n";
+  }
 };
 
 /**

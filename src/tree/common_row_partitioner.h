@@ -88,9 +88,11 @@ class CommonRowPartitioner {
   bst_row_t base_rowid = 0;
 
   CommonRowPartitioner() = default;
+  
   CommonRowPartitioner(Context const* ctx, bst_row_t num_row, bst_row_t _base_rowid,
                        bool is_col_split)
       : base_rowid{_base_rowid}, is_col_split_{is_col_split} {
+    std::cout << "CommonRowPartitioner::CommonRowPartitioner\n" << std::flush;
     row_set_collection_.Clear();
     std::vector<size_t>& row_indices = *row_set_collection_.Data();
     row_indices.resize(num_row);
@@ -103,6 +105,7 @@ class CommonRowPartitioner {
       column_split_helper_ = ColumnSplitHelper{num_row, &partition_builder_, &row_set_collection_};
     }
   }
+
 
   template <typename ExpandEntry>
   void FindSplitConditions(const std::vector<ExpandEntry>& nodes, const RegTree& tree,
@@ -126,7 +129,29 @@ class CommonRowPartitioner {
         }
       }
       (*split_conditions)[i] = split_cond;
+      std::cout << "FIND_SPLIT_CONDITIONS_DETAIL i=" << i << " nidx=" << nidx << " fidx=" << fidx
+		<< " split_pt=" << split_pt << " split_cond=" << split_cond 
+		<< "\n";
     }
+    std::cout << "FIND_SPLIT_CONDITIONS nb_nodes=" << nodes.size() << " [ ";
+    size_t P1 = nodes.size();
+    size_t P2 = 0;
+    if(P1 >= 12) {
+      P1 = 6;
+      P2 = 6;
+    }    
+    for (std::size_t i = 0; i < P1; ++i) {
+      bst_node_t const nidx = nodes[i].nid;
+      std::cout << "( nidx=" << nidx <<  ", split_cond=" <<  (*split_conditions)[i] << " ), ";
+    }
+    std::cout << " ...  ";    
+    for (std::size_t i = 0; i < P2; ++i) {
+      size_t j = nodes.size() - 1 - P2 + i;
+      bst_node_t const nidx = nodes[j].nid;
+      std::cout << ", ( nidx=" << nidx <<  ", split_cond=" <<  (*split_conditions)[j] << " )";
+    }    
+    std::cout << " ]\n" << std::flush;    
+      
   }
 
   template <typename ExpandEntry>
@@ -190,6 +215,12 @@ class CommonRowPartitioner {
                       std::vector<ExpandEntry> const& nodes, RegTree const* p_tree) {
     // 1. Find split condition for each split
     size_t n_nodes = nodes.size();
+    std::string lNodesStr = "";
+    for (std::size_t i = 0; i < n_nodes; ++i) {
+      bst_node_t const nidx = nodes[i].nid;
+      lNodesStr += std::to_string(nidx) + " ";
+    }
+    std::cout << "UpdatePosition nodes=[ " << lNodesStr << "]\n";
 
     std::vector<int32_t> split_conditions;
     if (column_matrix.IsInitialized()) {

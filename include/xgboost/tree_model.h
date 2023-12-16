@@ -271,6 +271,15 @@ class RegTree : public Model {
       return x;
     }
 
+    std::string to_json() const {
+      std::string lJSON = "{ \"leaf_value\" : [ ";
+      lJSON += std::to_string((this->info_).leaf_value) + " ], \"parent\" : " + std::to_string(parent_) + ", \"left\" : ";
+      lJSON += std::to_string(cleft_) + ", \"right\" : " + std::to_string(cright_) ;
+      lJSON += ", \"svalue\" : " + std::to_string((this->info_).split_cond);
+      lJSON += ", \"sindex\" : " + std::to_string(sindex_) + " }"; 
+      return lJSON;
+    }
+    
    private:
     /*!
      * \brief in leaf node, we have weights, in non-leaf nodes,
@@ -297,6 +306,7 @@ class RegTree : public Model {
    * \param value new leaf value
    */
   void ChangeToLeaf(int rid, bst_float value) {
+    std::printf("TREE_CHANGE_TO_LEAF node_id=%ld leaf_value=%f\n", rid, value);
     CHECK(nodes_[nodes_[rid].LeftChild() ].IsLeaf());
     CHECK(nodes_[nodes_[rid].RightChild()].IsLeaf());
     this->DeleteNode(nodes_[rid].LeftChild());
@@ -416,6 +426,19 @@ class RegTree : public Model {
    */
   [[nodiscard]] bool Equal(const RegTree& b) const;
 
+  void dump(std::string const & iLabel) const;
+  
+  std::string to_json() const {
+    std::string lJSON = "{\n";
+    for(size_t i=0; i < nodes_.size(); ++i) {
+      std::string lSep = ",\n";
+      if((i + 1) == nodes_.size()) lSep = "\n";
+      lJSON += "\t\t\t\"Node_" + std::to_string(i) + "\" : " + nodes_[i].to_json() + lSep;
+    }
+    lJSON += "\t\t}"; 
+    return lJSON;    
+  }
+  
   /**
    * \brief Expands a leaf node into two additional leaf nodes.
    *

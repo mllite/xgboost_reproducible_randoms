@@ -69,6 +69,17 @@ class HistogramBuilder {
     is_col_split_ = is_col_split;
   }
 
+  void dump_hist(std::string iLabel, bst_node_t nidx,
+		 xgboost::common::Span<xgboost::detail::GradientPairInternal<double> > const & hist) {
+    std::cout << "BUILD_HIST_LOCAL_DETAIL '" << iLabel << "' "
+	      << "nidx=" << nidx << " size=" << hist.size() << " data=[ ";
+    size_t N = 0;
+    for(auto it=hist.begin(); it != hist.end() && (N < size_t(12)); ++it, N++) {
+      std::cout << *it << " ";
+    }
+    std::cout << " ... ]\n" << std::flush;
+  }
+
   template <bool any_missing>
   void BuildLocalHistograms(common::BlockedSpace2d const &space, GHistIndexMatrix const &gidx,
                             std::vector<bst_node_t> const &nodes_to_build,
@@ -87,6 +98,9 @@ class HistogramBuilder {
       if (rid_set.Size() != 0) {
         common::BuildHist<any_missing>(gpair_h, rid_set, gidx, hist, force_read_by_column);
       }
+      // std::printf("BUILD_HIST_LOCAL thread_id=%ld nidx=%ld node_rows=%ld rid_set=%ld\n",
+      // 		  tid, nidx, end_of_row_set - start_of_row_set, rid_set.Size());
+      // dump_hist("JUST_BUILT", nidx, hist);
     });
   }
 
@@ -150,7 +164,11 @@ class HistogramBuilder {
                  std::vector<bst_node_t> const &nodes_to_build,
                  linalg::VectorView<GradientPair const> gpair, bool force_read_by_column = false) {
     CHECK(gpair.Contiguous());
-
+    std::cout << "BUILD_HIST_START [ ";
+    for(auto idx = 0; idx < nodes_to_build.size(); idx++) std::cout << nodes_to_build[idx] << " ";
+    std::cout << "]\n";
+    
+    
     if (page_idx == 0) {
       // Add the local histogram cache to the parallel buffer before processing the first page.
       auto n_nodes = nodes_to_build.size();
@@ -205,7 +223,15 @@ class HistogramBuilder {
           auto parent_hist = this->hist_[parent_id];
           auto subtract_hist = this->hist_[subtraction_nidx];
           common::SubtractionHist(subtract_hist, parent_hist, sibling_hist, r.begin(), r.end());
+	  // dump_hist("JUST_SYNCED_PARENT", parent_id, parent_hist);
+	  // dump_hist("JUST_SYNCED_SIBLING", sibling_nidx, sibling_hist);
+	  // dump_hist("JUST_SYNCED_SUBSTRACT", subtraction_nidx, subtract_hist);
         });
+    std::cout << "BUILD_HIST_SYNC_END [ ";
+    for(auto idx = 0; idx < nodes_to_build.size(); idx++) std::cout << nodes_to_build[idx] << " ";
+    std::cout << "] [";    
+    for(auto idx = 0; idx < nodes_to_trick.size(); idx++) std::cout << nodes_to_trick[idx] << " ";
+    std::cout << "]\n";
   }
 
  public:

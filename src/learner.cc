@@ -62,6 +62,19 @@
 #include "xgboost/predictor.h"            // for PredictionContainer, PredictionCacheEntry
 #include "xgboost/string_view.h"          // for operator<<, StringView
 #include "xgboost/task.h"                 // for ObjInfo
+#include <cstdio>
+
+
+
+void monitor__Start(std::string const & iPart) {
+  std::printf("XGBOOST_LEARNER_OPERATION_START '%s'\n", iPart.c_str());
+  std::fflush(stdout);
+}
+
+void monitor__Stop(std::string const & iPart) {
+  std::printf("XGBOOST_LEARNER_OPERATION_END '%s'\n", iPart.c_str());
+  std::fflush(stdout);
+}
 
 namespace {
 const char* kMaxDeltaStepDefaultValue = "0.7";
@@ -436,6 +449,7 @@ class LearnerConfiguration : public Learner {
       this->ConfigureModelParamWithoutBaseScore();
       mparam_.Validate(&ctx_);
     }
+    std::cout << "InitBaseScore " << mparam_.base_score << "\n" << std::flush;
     CHECK(!std::isnan(mparam_.base_score));
     CHECK(!std::isinf(mparam_.base_score));
   }
@@ -462,7 +476,7 @@ class LearnerConfiguration : public Learner {
       return;
     }
 
-    monitor_.Start("Configure");
+    monitor__Start("Configure");
     auto old_tparam = tparam_;
     Args args = {cfg_.cbegin(), cfg_.cend()};
 
@@ -499,7 +513,7 @@ class LearnerConfiguration : public Learner {
     }
 
     cfg_.clear();
-    monitor_.Stop("Configure");
+    monitor__Stop("Configure");
   }
 
   void CheckModelInitialized() const {
@@ -1260,7 +1274,7 @@ class LearnerImpl : public LearnerIO {
   }
 
   void UpdateOneIter(int iter, std::shared_ptr<DMatrix> train) override {
-    monitor_.Start("UpdateOneIter");
+    monitor__Start("UpdateOneIter");
     TrainingObserver::Instance().Update(iter);
     this->Configure();
     this->InitBaseScore(train.get());
@@ -1273,23 +1287,23 @@ class LearnerImpl : public LearnerIO {
 
     auto& predt = prediction_container_.Cache(train, ctx_.Device());
 
-    monitor_.Start("PredictRaw");
+    monitor__Start("PredictRaw");
     this->PredictRaw(train.get(), &predt, true, 0, 0);
     TrainingObserver::Instance().Observe(predt.predictions, "Predictions");
-    monitor_.Stop("PredictRaw");
+    monitor__Stop("PredictRaw");
 
-    monitor_.Start("GetGradient");
+    monitor__Start("GetGradient");
     GetGradient(predt.predictions, train->Info(), iter, &gpair_);
-    monitor_.Stop("GetGradient");
+    monitor__Stop("GetGradient");
     TrainingObserver::Instance().Observe(*gpair_.Data(), "Gradients");
 
     gbm_->DoBoost(train.get(), &gpair_, &predt, obj_.get());
-    monitor_.Stop("UpdateOneIter");
+    monitor__Stop("UpdateOneIter");
   }
 
   void BoostOneIter(int iter, std::shared_ptr<DMatrix> train,
                     linalg::Matrix<GradientPair>* in_gpair) override {
-    monitor_.Start("BoostOneIter");
+    monitor__Start("BoostOneIter");
     this->Configure();
 
     if (ctx_.seed_per_iteration) {
@@ -1303,13 +1317,13 @@ class LearnerImpl : public LearnerIO {
            "the model.";
     auto& predt = prediction_container_.Cache(train, ctx_.Device());
     gbm_->DoBoost(train.get(), in_gpair, &predt, obj_.get());
-    monitor_.Stop("BoostOneIter");
+    monitor__Stop("BoostOneIter");
   }
 
   std::string EvalOneIter(int iter,
                           const std::vector<std::shared_ptr<DMatrix>>& data_sets,
                           const std::vector<std::string>& data_names) override {
-    monitor_.Start("EvalOneIter");
+    monitor__Start("EvalOneIter");
     this->Configure();
     this->CheckModelInitialized();
 
@@ -1341,7 +1355,7 @@ class LearnerImpl : public LearnerIO {
       }
     }
 
-    monitor_.Stop("EvalOneIter");
+    monitor__Stop("EvalOneIter");
     return os.str();
   }
 

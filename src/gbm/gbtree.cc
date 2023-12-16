@@ -37,6 +37,16 @@
 #include "xgboost/tree_model.h"   // for RegTree
 #include "xgboost/tree_updater.h"
 
+void booster_monitor__Start(std::string const & iPart) {
+  std::printf("XGBOOST_UPDATER_OPERATION_START '%s'\n", iPart.c_str());
+}
+
+void booster_monitor__Stop(std::string const & iPart) {
+  std::printf("XGBOOST_UPDATER_OPERATION_END '%s'\n", iPart.c_str());
+}
+
+
+
 namespace xgboost::gbm {
 DMLC_REGISTRY_FILE_TAG(gbtree);
 
@@ -178,6 +188,7 @@ void GBTree::UpdateTreeLeaf(DMatrix const* p_fmat, HostDeviceVector<float> const
                             ObjFunction const* obj, std::int32_t group_idx,
                             std::vector<HostDeviceVector<bst_node_t>> const& node_position,
                             TreesOneGroup* p_trees) {
+  std::printf("GBTree::UpdateTreeLeaf_START\n");
   CHECK(!updaters_.empty());
   if (!updaters_.back()->HasNodePosition()) {
     return;
@@ -186,6 +197,7 @@ void GBTree::UpdateTreeLeaf(DMatrix const* p_fmat, HostDeviceVector<float> const
     return;
   }
 
+  assert(0);
   auto& trees = *p_trees;
   CHECK_EQ(model_.param.num_parallel_tree, trees.size());
   CHECK_EQ(model_.param.num_parallel_tree, 1)
@@ -197,10 +209,12 @@ void GBTree::UpdateTreeLeaf(DMatrix const* p_fmat, HostDeviceVector<float> const
     obj->UpdateTreeLeaf(position, p_fmat->Info(), tree_param_.learning_rate / trees.size(),
                         predictions, group_idx, trees[tree_idx].get());
   }
+  std::printf("GBTree::UpdateTreeLeaf_END\n");
 }
 
 void GBTree::DoBoost(DMatrix* p_fmat, linalg::Matrix<GradientPair>* in_gpair,
                      PredictionCacheEntry* predt, ObjFunction const* obj) {
+  std::printf("GBTree::DoBoost_START\n");
   if (model_.learner_model_param->IsVectorLeaf()) {
     CHECK(tparam_.tree_method == TreeMethod::kHist || tparam_.tree_method == TreeMethod::kAuto)
         << "Only the hist tree method is supported for building multi-target trees with vector "
@@ -210,7 +224,7 @@ void GBTree::DoBoost(DMatrix* p_fmat, linalg::Matrix<GradientPair>* in_gpair,
 
   TreesOneIter new_trees;
   bst_target_t const n_groups = model_.learner_model_param->OutputLength();
-  monitor_.Start("BoostNewTrees");
+  booster_monitor__Start("BoostNewTrees");
 
   predt->predictions.SetDevice(ctx_->Device());
   auto out = linalg::MakeTensorView(ctx_, &predt->predictions, p_fmat->Info().num_row_,
@@ -245,6 +259,9 @@ void GBTree::DoBoost(DMatrix* p_fmat, linalg::Matrix<GradientPair>* in_gpair,
         updaters_.back()->UpdatePredictionCache(p_fmat, out)) {
       predt->Update(1);
     }
+    for (auto& tree : new_trees) {
+      tree[0]->dump("FINAL_2");
+    }
   } else {
     CHECK_EQ(in_gpair->Size() % n_groups, 0U) << "must have exactly ngroup * nrow gpairs";
     linalg::Matrix<GradientPair> tmp{{in_gpair->Shape(0), static_cast<std::size_t>(1ul)},
@@ -269,13 +286,15 @@ void GBTree::DoBoost(DMatrix* p_fmat, linalg::Matrix<GradientPair>* in_gpair,
     }
   }
 
-  monitor_.Stop("BoostNewTrees");
+  booster_monitor__Stop("BoostNewTrees");
   this->CommitModel(std::move(new_trees));
+  std::printf("GBTree::DoBoost_END\n");
 }
 
 void GBTree::BoostNewTrees(linalg::Matrix<GradientPair>* gpair, DMatrix* p_fmat, int bst_group,
                            std::vector<HostDeviceVector<bst_node_t>>* out_position,
                            TreesOneGroup* ret) {
+  std::printf("GBTree::BoostNewTrees_START\n");
   std::vector<RegTree*> new_trees;
   ret->clear();
   // create the trees
@@ -330,12 +349,17 @@ void GBTree::BoostNewTrees(linalg::Matrix<GradientPair>* gpair, DMatrix* p_fmat,
                common::Span<HostDeviceVector<bst_node_t>>{*out_position}, new_trees);
   }
   tree_param_.learning_rate = lr;
+  
+  for (auto& tree : new_trees) {
+    tree->dump("FINAL");
+  }
+  std::printf("GBTree::BoostNewTrees_END\n");
 }
 
 void GBTree::CommitModel(TreesOneIter&& new_trees) {
-  monitor_.Start("CommitModel");
+  booster_monitor__Start("CommitModel");
   model_.CommitModel(std::forward<TreesOneIter>(new_trees));
-  monitor_.Stop("CommitModel");
+  booster_monitor__Stop("CommitModel");
 }
 
 void GBTree::LoadConfig(Json const& in) {
@@ -491,6 +515,8 @@ void GBTree::PredictBatchImpl(DMatrix* p_fmat, PredictionCacheEntry* out_preds, 
   if (layer_end == 0) {
     layer_end = this->BoostedRounds();
   }
+
+  
   if (layer_begin != 0 || layer_end < static_cast<bst_layer_t>(out_preds->version)) {
     // cache is dropped.
     out_preds->version = 0;
@@ -506,17 +532,27 @@ void GBTree::PredictBatchImpl(DMatrix* p_fmat, PredictionCacheEntry* out_preds, 
     CHECK_EQ(out_preds->version, 0);
   }
 
+  std::printf("GBTree::PredictBatchImpl layer_begin=%ld layer_end=%ld\n",
+	      layer_begin, layer_end);
+  std::printf("GBTree::PredictBatchImpl version=%ld\n", out_preds->version);
+  
   auto const& predictor = GetPredictor(is_training, &out_preds->predictions, p_fmat);
   if (out_preds->version == 0) {
     // out_preds->Size() can be non-zero as it's initialized here before any
     // tree is built at the 0^th iterator.
+    std::printf("GBTree::PredictBatchImpl InitOutPredictions version=%ld\n",
+		out_preds->version);
     predictor->InitOutPredictions(p_fmat->Info(), &out_preds->predictions, model_);
   }
 
   auto [tree_begin, tree_end] = detail::LayerToTree(model_, layer_begin, layer_end);
+  std::printf("GBTree::PredictBatchImpl predictor->PredictBatch tree_begin=%ld tree_end=%ld\n",
+	      tree_begin, tree_end);
   CHECK_LE(tree_end, model_.trees.size()) << "Invalid number of trees.";
   if (tree_end > tree_begin) {
+    std::printf("GBTree::PredictBatchImpl predictor->PredictBatch\n");
     predictor->PredictBatch(p_fmat, out_preds, model_, tree_begin, tree_end);
+    assert(0);
   }
   if (reset) {
     out_preds->version = 0;
@@ -524,6 +560,7 @@ void GBTree::PredictBatchImpl(DMatrix* p_fmat, PredictionCacheEntry* out_preds, 
     std::uint32_t delta = layer_end - out_preds->version;
     out_preds->Update(delta);
   }
+  // out_preds->dump("Gbtree::PredictBatchImpl", p_fmat->Info().num_row_);
 }
 
 void GBTree::PredictBatch(DMatrix* p_fmat, PredictionCacheEntry* out_preds, bool is_training,

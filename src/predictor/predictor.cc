@@ -45,6 +45,7 @@ void ValidateBaseMarginShape(linalg::Tensor<float, D> const& margin, bst_row_t n
 
 void Predictor::InitOutPredictions(const MetaInfo& info, HostDeviceVector<bst_float>* out_preds,
                                    const gbm::GBTreeModel& model) const {
+  std::printf("Predictor::InitOutPredictions_START\n");
   CHECK_NE(model.learner_model_param->num_output_group, 0);
   std::size_t n{model.learner_model_param->OutputLength() * info.num_row_};
 
@@ -63,6 +64,8 @@ void Predictor::InitOutPredictions(const MetaInfo& info, HostDeviceVector<bst_fl
     auto base_score = model.learner_model_param->BaseScore(DeviceOrd::CPU())(0);
     out_preds->Fill(base_score);
   }
+  std::printf("Predictor::InitOutPredictions_END\n");
+  std::fflush(stdout);
 }
 }  // namespace xgboost
 

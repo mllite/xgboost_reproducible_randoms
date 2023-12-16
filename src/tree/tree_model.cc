@@ -788,6 +788,12 @@ bst_node_t RegTree::GetNumSplitNodes() const {
   return splits;
 }
 
+void RegTree::dump(std::string const & iLabel) const {
+  std::cout << "XGB_BOOSTER_DUMP_REG_TREE_START " << iLabel << "\n";
+  std::cout << to_json() << "\n"; 
+  std::cout << "XGB_BOOSTER_DUMP_REG_TREE_END " << iLabel << "\n";
+}
+  
 void RegTree::ExpandNode(bst_node_t nid, unsigned split_index, bst_float split_value,
                          bool default_left, bst_float base_weight,
                          bst_float left_leaf_weight,
@@ -797,6 +803,8 @@ void RegTree::ExpandNode(bst_node_t nid, unsigned split_index, bst_float split_v
   CHECK(!IsMultiTarget());
   int pleft = this->AllocNode();
   int pright = this->AllocNode();
+  std::cout << "XGB_BOOSTER_REG_TREE_EXPAND_NODE_START " << nid << "\n";    
+
   auto &node = nodes_[nid];
   CHECK(node.IsLeaf());
   node.SetLeftChild(pleft);
@@ -813,6 +821,11 @@ void RegTree::ExpandNode(bst_node_t nid, unsigned split_index, bst_float split_v
   this->Stat(pright) = {0.0f, right_sum, right_leaf_weight};
 
   this->split_types_.at(nid) = FeatureType::kNumerical;
+
+  std::string lLabel = "AFTER_EXPAND_NODE_";
+  lLabel += std::to_string(nid) + "_"  + std::to_string(pleft) + "_"  + std::to_string(pright);
+  dump(lLabel);
+  std::cout << "XGB_BOOSTER_REG_TREE_EXPAND_NODE_END " << nid << "\n";    
 }
 
 void RegTree::ExpandNode(bst_node_t nidx, bst_feature_t split_index, float split_cond,

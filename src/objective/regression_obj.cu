@@ -155,8 +155,12 @@ class RegLossObj : public FitIntercept {
             if (label == 1.0f) {
               w *= _scale_pos_weight;
             }
-            out_gpair_ptr[idx] = GradientPair(Loss::FirstOrderGradient(p, label) * w,
-                                              Loss::SecondOrderGradient(p, label) * w);
+	    auto grad = Loss::FirstOrderGradient(p, label) * w;
+	    auto hess = Loss::SecondOrderGradient(p, label) * w;
+            out_gpair_ptr[idx] = GradientPair(grad, hess);
+	    std::printf("GET_REGRESSION_GRADIENT idx=%ld label=[ %s ] p=[ %s ] grad=[ %s ] hess=[ %s ]\n" ,
+			idx, std::to_string(label).c_str(), std::to_string(p).c_str(),
+			std::to_string(grad).c_str(), std::to_string(hess).c_str());
           }
         },
         common::Range{0, static_cast<int64_t>(n_data_blocks)}, nthreads, device)

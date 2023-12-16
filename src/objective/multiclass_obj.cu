@@ -101,6 +101,8 @@ class SoftmaxMultiClassObj : public ObjFunction {
             label = 0;
           }
           bst_float wt = is_null_weight ? 1.0f : weights[idx];
+	  std::string lGrad = "[ ";
+	  std::string lHess = "[ ";
           for (int k = 0; k < nclass; ++k) {
             // Computation duplicated to avoid creating a cache.
             bst_float p = expf(point[k] - wmax) / static_cast<float>(wsum);
@@ -108,7 +110,15 @@ class SoftmaxMultiClassObj : public ObjFunction {
             const bst_float h = fmax(2.0f * p * (1.0f - p) * wt, eps);
             p = label == k ? p - 1.0f : p;
             gpair[idx * nclass + k] = GradientPair(p * wt, h);
-          }
+	    lGrad = lGrad + std::to_string(p*wt) + " "; 
+	    lHess = lHess + std::to_string(h) + " "; 
+	  }
+	  lGrad = lGrad + "]";
+	  lHess = lHess + "]";
+	  if((idx < 6) or ((idx + 6) > labels.size())) {
+	    std::printf("GET_MULTICLASS_GRADIENT idx=%ld label=%f grad=%s hess=%s\n" ,
+			idx, label, lGrad.c_str(), lHess.c_str());
+	  }
         }, common::Range{0, ndata}, ctx_->Threads(), device)
         .Eval(out_gpair->Data(), info.labels.Data(), &preds, &info.weights_, &label_correct_);
 

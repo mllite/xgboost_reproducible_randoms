@@ -84,6 +84,11 @@ class TreeEvaluator {
       float gain = this->CalcGainGivenWeight(param, left, wleft) +
                     this->CalcGainGivenWeight(param, right, wright);
 
+      std::cout << "CalcSplitGain nidx=" << nidx << " fidx=" << fidx
+		<< " left=" << left << " right=" << right
+		<< " wleft=" << wleft << " wright=" << wright
+		<< " gain=" << gain << "\n" << std::flush;
+
       if (constraint == 0) {
         return gain;
       } else if (constraint > 0) {
