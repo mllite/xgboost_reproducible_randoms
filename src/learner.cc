@@ -67,12 +67,12 @@
 
 
 void monitor__Start(std::string const & iPart) {
-  std::printf("XGBOOST_LEARNER_OPERATION_START '%s'\n", iPart.c_str());
+  std::printf("MLLITE_DBG_XGBOOST_LEARNER_OPERATION_START '%s'\n", iPart.c_str());
   std::fflush(stdout);
 }
 
 void monitor__Stop(std::string const & iPart) {
-  std::printf("XGBOOST_LEARNER_OPERATION_END '%s'\n", iPart.c_str());
+  std::printf("MLLITE_DBG_XGBOOST_LEARNER_OPERATION_END '%s'\n", iPart.c_str());
   std::fflush(stdout);
 }
 
@@ -449,7 +449,7 @@ class LearnerConfiguration : public Learner {
       this->ConfigureModelParamWithoutBaseScore();
       mparam_.Validate(&ctx_);
     }
-    std::cout << "InitBaseScore " << mparam_.base_score << "\n" << std::flush;
+    std::cout << "MLLITE_DBG_InitBaseScore " << mparam_.base_score << "\n" << std::flush;
     CHECK(!std::isnan(mparam_.base_score));
     CHECK(!std::isinf(mparam_.base_score));
   }

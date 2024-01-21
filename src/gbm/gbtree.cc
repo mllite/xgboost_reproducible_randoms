@@ -38,11 +38,11 @@
 #include "xgboost/tree_updater.h"
 
 void booster_monitor__Start(std::string const & iPart) {
-  std::printf("XGBOOST_UPDATER_OPERATION_START '%s'\n", iPart.c_str());
+  std::printf("MLLITE_DBG_XGBOOST_UPDATER_OPERATION_START '%s'\n", iPart.c_str());
 }
 
 void booster_monitor__Stop(std::string const & iPart) {
-  std::printf("XGBOOST_UPDATER_OPERATION_END '%s'\n", iPart.c_str());
+  std::printf("MLLITE_DBG_XGBOOST_UPDATER_OPERATION_END '%s'\n", iPart.c_str());
 }
 
 
