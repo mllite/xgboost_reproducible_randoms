@@ -271,12 +271,32 @@ class RegTree : public Model {
       return x;
     }
 
+    std::string node_id_to_string(int32_t node_id) const {
+      // std::printf("node_id_to_string node_id=%d %d %d\n", node_id, 1 << 31, kInvalidNodeId);
+      if(node_id < -(1 << 16)) {
+	return std::to_string(int32_t(node_id + (1 << 31)));
+      }
+      if(node_id == int32_t(-1)) {
+	return "null";
+      }
+      return std::to_string(node_id);
+    }
+
     std::string to_json() const {
-      std::string lJSON = "{ \"leaf_value\" : [ ";
-      lJSON += std::to_string((this->info_).leaf_value) + " ], \"parent\" : " + std::to_string(parent_) + ", \"left\" : ";
-      lJSON += std::to_string(cleft_) + ", \"right\" : " + std::to_string(cright_) ;
-      lJSON += ", \"svalue\" : " + std::to_string((this->info_).split_cond);
-      lJSON += ", \"sindex\" : " + std::to_string(sindex_) + " }"; 
+      std::string lJSON = "{ \"leaf_value\" : [";
+      std::string leaf_str = std::to_string((this->info_).leaf_value);
+      leaf_str = " " + leaf_str + " ";
+      std::string sindex_str = "0";
+      std::string svalue_str = "0";
+      if(cleft_ > 0) {
+	leaf_str = " ";
+	svalue_str = std::to_string((this->info_).split_cond);
+	sindex_str = std::to_string(sindex_);
+      }
+      lJSON += leaf_str + "], \"parent\" : " + node_id_to_string(parent_) + ", \"left\" : ";
+      lJSON += node_id_to_string(cleft_) + ", \"right\" : " + node_id_to_string(cright_) ;
+      lJSON += ", \"svalue\" : " + svalue_str;
+      lJSON += ", \"sindex\" : " + sindex_str + " }"; 
       return lJSON;
     }
     
