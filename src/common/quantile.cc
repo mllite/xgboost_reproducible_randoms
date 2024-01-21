@@ -402,8 +402,8 @@ void SketchContainerImpl<WQSketch>::MakeCuts(Context const *ctx, MetaInfo const 
       a.SetPrune(reduced[fidx], max_num_bins + 1);
       CHECK(a.data && reduced[fidx].data);
       const bst_float mval = a.data[0].value;
-      std::printf("SketchContainerImpl::MakeCuts fid=%ld firstval=%g new_firstval=%g\n",
-		  fidx, mval, mval - fabs(mval) - 1e-5f);
+      // std::printf("SketchContainerImpl::MakeCuts fid=%ld firstval=%g new_firstval=%g\n",
+      // 		  fidx, mval, mval - fabs(mval) - 1e-5f);
       p_cuts->min_vals_.HostVector()[fidx] = mval - fabs(mval) - 1e-5f;
     } else {
       // Empty column.
@@ -425,7 +425,7 @@ void SketchContainerImpl<WQSketch>::MakeCuts(Context const *ctx, MetaInfo const 
           (a.size > 0) ? a.data[a.size - 1].value : p_cuts->min_vals_.HostVector()[fid];
       // this must be bigger than last value in a scale
       const bst_float last = cpt + (fabs(cpt) + 1e-5f);
-      std::printf("SketchContainerImpl::MakeCuts fid=%ld lastval=%g new_lastval=%g\n", fid, cpt, last);
+      // std::printf("SketchContainerImpl::MakeCuts fid=%ld lastval=%g new_lastval=%g\n", fid, cpt, last);
       p_cuts->cut_values_.HostVector().push_back(last);
     }
 

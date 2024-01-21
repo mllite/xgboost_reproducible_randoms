@@ -94,17 +94,17 @@ class HistogramCuts {
     std::vector<float>    const& lValues = Values();
     std::vector<float>    const& lMins = MinValues();
     auto NF = lMins.size();
-    std::cout << "HISTOGRAM_CUTS_DUMP_START '" << iLabel << "'\n";
+    std::cout << "MLLITE_DBG_HISTOGRAM_CUTS_DUMP_START '" << iLabel << "'\n";
     size_t p = 0;
     for(size_t f=0; f < NF; ++f) {
       size_t lBins_f =  FeatureBins(f);
-      std::cout << "HISTOGRAM_CUTS_DUMP_DETAIL_FEATURE " << f << " " << lBins_f <<  " [ ";
+      std::cout << "MLLITE_DBG_HISTOGRAM_CUTS_DUMP_DETAIL_FEATURE " << f << " " << lBins_f <<  " [ ";
       for(size_t b=0; b < lBins_f; ++b) {
 	std::cout << lValues[p++] << " ";
       }
       std::cout << " ]\n" << std::flush;
     }
-    std::cout << "HISTOGRAM_CUTS_DUMP_END '" << iLabel << "'\n" << std::flush;    
+    std::cout << "MLLITE_DBG_HISTOGRAM_CUTS_DUMP_END '" << iLabel << "'\n" << std::flush;    
   }
 
   [[nodiscard]] bool HasCategorical() const { return has_categorical_; }
