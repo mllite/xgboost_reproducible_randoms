@@ -116,7 +116,7 @@ class SoftmaxMultiClassObj : public ObjFunction {
 	  lGrad = lGrad + "]";
 	  lHess = lHess + "]";
 	  if((idx < 6) or ((idx + 6) > labels.size())) {
-	    std::printf("GET_MULTICLASS_GRADIENT idx=%ld label=%f grad=%s hess=%s\n" ,
+	    std::printf("MLLITE_DBG_GET_MULTICLASS_GRADIENT idx=%ld label=%f grad=%s hess=%s\n" ,
 			idx, label, lGrad.c_str(), lHess.c_str());
 	  }
         }, common::Range{0, ndata}, ctx_->Threads(), device)
