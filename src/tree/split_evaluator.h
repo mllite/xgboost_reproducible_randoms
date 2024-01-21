@@ -84,7 +84,7 @@ class TreeEvaluator {
       float gain = this->CalcGainGivenWeight(param, left, wleft) +
                     this->CalcGainGivenWeight(param, right, wright);
 
-      std::cout << "CalcSplitGain nidx=" << nidx << " fidx=" << fidx
+      std::cout << "MLLITE_DBG_CalcSplitGain nidx=" << nidx << " fidx=" << fidx
 		<< " left=" << left << " right=" << right
 		<< " wleft=" << wleft << " wright=" << wright
 		<< " gain=" << gain << "\n" << std::flush;

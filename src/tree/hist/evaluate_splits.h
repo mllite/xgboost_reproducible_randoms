@@ -226,7 +226,7 @@ class HistEvaluator {
     const std::vector<bst_float> &cut_val = cut.Values();
     auto const &parent = snode_[nidx];
 
-    // std::cout << "EnumerateSplit_DETAIL " << " nidx=" << nidx << " fidx=" <<  fidx << " [ ";
+    // std::cout << "MLLITE_DBG_EnumerateSplit_DETAIL " << " nidx=" << nidx << " fidx=" <<  fidx << " [ ";
     // for (bst_bin_t i = cut_ptr[fidx]; i != cut_ptr.at(fidx + 1); i += 1) {
     //   std::cout << "(cutpoint=" << cut_val[i] << ", grad=" << hist[i].GetGrad() << ", hess=" <<  hist[i].GetHess() << "), ";
     // }
@@ -260,7 +260,7 @@ class HistEvaluator {
       // try to find a split
       left_sum.Add(hist[i].GetGrad(), hist[i].GetHess());
       right_sum.SetSubstract(parent.stats, left_sum);
-      std::cout << "EnumerateSplit_1 " << i << " nidx=" << nidx << " fidx=" <<  fidx << " grad_i="
+      std::cout << "MLLITE_DBG_EnumerateSplit_1 " << i << " nidx=" << nidx << " fidx=" <<  fidx << " grad_i="
 		<< hist[i].GetGrad() << " hess_i=" << hist[i].GetHess()
 		<< " split_pt=" << cut_val[i]
 		<< " parent.root_gain=" << parent.root_gain 
@@ -289,7 +289,7 @@ class HistEvaluator {
           }
           best.Update(loss_chg, fidx, split_pt, d_step == -1, false, right_sum, left_sum);
         }
-	std::cout << "EnumerateSplit_2 " << i << " nidx=" << nidx << " fidx=" <<  fidx
+	std::cout << "MLLITE_DBG_EnumerateSplit_2 " << i << " nidx=" << nidx << " fidx=" <<  fidx
 		  << " split_pt=" << split_pt
 		  << " parent.root_gain=" << parent.root_gain << " loss_chg=" << loss_chg
 		  << "\n" << std::flush;
@@ -429,7 +429,7 @@ class HistEvaluator {
 
   // Add splits to tree, handles all statistic
   void ApplyTreeSplit(CPUExpandEntry const& candidate, RegTree *p_tree) {
-    std::cout << "APPLY_TREE_SPLIT_CANDIDATE " << candidate.nid << " " << param_->learning_rate << "\n" << std::flush;
+    std::cout << "MLLITE_DBG_APPLY_TREE_SPLIT_CANDIDATE " << candidate.nid << " " << param_->learning_rate << "\n" << std::flush;
     auto evaluator = tree_evaluator_.GetEvaluator();
     RegTree &tree = *p_tree;
 
@@ -805,7 +805,7 @@ void UpdatePredictionCacheImpl(Context const *ctx, RegTree const *p_last_tree,
         for (const size_t *it = rowset.begin + r.begin(); it < rowset.begin + r.end(); ++it) {
 	  auto lBefore = out_preds(*it); 
           out_preds(*it) += leaf_value;
-	  std::cout << "UpdatePredictionCacheImpl " << *it << " " << nidx << " "
+	  std::cout << "MLLITE_DBG_UpdatePredictionCacheImpl " << *it << " " << nidx << " "
 		    << leaf_value << " " << out_preds(*it) << "\n" << std::flush;
         }
       }

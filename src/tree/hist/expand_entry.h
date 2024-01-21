@@ -104,13 +104,13 @@ struct CPUExpandEntry : public ExpandEntryImpl<CPUExpandEntry> {
   CPUExpandEntry(bst_node_t nidx, bst_node_t depth) : ExpandEntryImpl{nidx, depth} {}
 
   void dump() const {
-    std::cout << "XGB_BOOSTER_DUMP_EXPAND_ENTRY_START " << nid << "\n";
+    std::cout << "MLLITE_DBG_XGB_BOOSTER_DUMP_EXPAND_ENTRY_START " << nid << "\n";
     std::cout << "{ node_id:" << nid << ", depth:" << depth << ", loss_chg:"
 		  << split.loss_chg << ", split_index:" << split.sindex
 		  << ", split_value:" << split.split_value
 	      << ", left_sum:" << split.left_sum.GetGrad() << "/" << split.left_sum.GetHess() 
 	      << ", right_sum:" << split.right_sum.GetGrad() << "/" << split.right_sum.GetHess() << "\n"; 
-    std::cout << "XGB_BOOSTER_DUMP_EXPAND_ENTRY_END " << nid << "\n";
+    std::cout << "MLLITE_DBG_XGB_BOOSTER_DUMP_EXPAND_ENTRY_END " << nid << "\n";
   }
 
   void SaveGrad(Json* p_out) const {

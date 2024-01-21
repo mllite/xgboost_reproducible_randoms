@@ -47,11 +47,11 @@
 
 
 void updater_monitor__Start(std::string const & iPart) {
-  std::printf("XGBOOST_UPDATER_OPERATION_START '%s'\n", iPart.c_str());
+  std::printf("MLLITE_DBG_XGBOOST_UPDATER_OPERATION_START '%s'\n", iPart.c_str());
 }
 
 void updater_monitor__Stop(std::string const & iPart) {
-  std::printf("XGBOOST_UPDATER_OPERATION_END '%s'\n", iPart.c_str());
+  std::printf("MLLITE_DBG_XGBOOST_UPDATER_OPERATION_END '%s'\n", iPart.c_str());
 }
 
 
@@ -372,7 +372,7 @@ class HistUpdater {
         CHECK_EQ(n_total_bins, page.cut.TotalBins());
       }
       
-      std::printf("HIST_UPDATER_SINGLE_TGT_INITDATA n_total_bins=%ld page_size=%ld page_base_row_id=%ld column_split=%d\n",
+      std::printf("MLLITE_DBG_HIST_UPDATER_SINGLE_TGT_INITDATA n_total_bins=%ld page_size=%ld page_base_row_id=%ld column_split=%d\n",
 		  n_total_bins, page.Size(), page.base_rowid, fmat->Info().IsColumnSplit());
       
       partitioner_.emplace_back(this->ctx_, page.Size(), page.base_rowid,
